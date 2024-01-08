@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 from telebot import TeleBot
-from handler_start import handle_start
+from handler_general import handle_start
 from handler_workout_plan import handle_create
 
 # Initialize the bot with your token
