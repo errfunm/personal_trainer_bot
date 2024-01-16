@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 from telebot import TeleBot
-from handler_general import handle_start, handle_cancel
+from handler_general import handle_start, handle_cancel, handle_change_lang
 from handler_workout_plan import handle_create
 
 # Initialize the bot with your token
@@ -18,6 +18,11 @@ def start_handler(message, bot=bot):
 @bot.message_handler(regexp="Create plan")
 def create_handler(message, bot=bot):
     handle_create(bot, message)
+
+
+@bot.message_handler(regexp="Change language🌐")
+def change_lang_handler(message, bot=bot):
+    handle_change_lang(bot, message)
 
 
 @bot.message_handler(commands=["cancel"])

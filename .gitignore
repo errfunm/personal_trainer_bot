@@ -2,3 +2,4 @@
 .env
 *.pyc
 test.py
+sqlite3.db
