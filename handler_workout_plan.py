@@ -1,7 +1,7 @@
 from openai import OpenAI
 from handler_general import handle_cancel
 from telebot import types
-import sqlite3
+
 
 QUESTIONS = {
     "en": [
@@ -23,12 +23,21 @@ QUESTIONS = {
 }
 
 # Reply keyboard markup options
-default_options = {
-    0: ["Gain muscle", "loose weight"],
-    1: ["Beginner(0-1 year)", "Intermediate(1-3 year)", "Pro(more than 3 years)"],
-    2: ["1", "2", "3", "4", "5"],
-    3: ["No", "Yes"],
-    4: ["No", "Yes"],
+reply_keyboard_options = {
+    "en": {
+        0: ["Gain muscle", "loose weight"],
+        1: ["Beginner(0-1 year)", "Intermediate(1-3 year)", "Pro(more than 3 years)"],
+        2: ["1", "2", "3", "4", "5"],
+        3: ["No", "Yes"],
+        4: ["No", "Yes"],
+    },  
+    "fa": {
+        0: ["عضله سازی", "کاهش وزن"],
+        1: ["مبتدی (0-1 سال)", "متوسط (1-3 سال)", "حرفه ای (بیش از 3 سال)"],
+        2: ["۱", "۲", "۳", "۴", "۵"],
+        3: ["بله", "خیر"],
+        4: ["بله", "خیر"]
+    }
 }
 
 
@@ -36,45 +45,35 @@ user_answers_dict = {}
 answers_list = []
 
 
-def handle_create(bot, message):
+def handle_create(bot, message, lang_code):
     user_id = message.from_user.id
     user_answers_dict[user_id] = []
-    ask_question(bot, message, 0)
+    ask_question(bot, message, 0, lang_code)
 
 
-def ask_question(bot, message, question_index):
-    # fetch database
-    con = sqlite3.connect("sqlite3.db")
-    cur = con.cursor()
-    res = cur.execute(f"SELECT * FROM user WHERE {message.from_user.id}")
-    user = res.fetchall()[0]
-    lang_code = user[1]
+def ask_question(bot, message, question_index, lang_code):
+
 
     chat_id = message.chat.id
-    questions = []
-    if lang_code == "fa":
-        questions = QUESTIONS["fa"]
-    else:
-        questions = QUESTIONS["en"]
+    questions = QUESTIONS[lang_code]
 
     if question_index < len(questions):
         try:
-            default_options[question_index]
             markup = types.ReplyKeyboardMarkup(row_width=1)
-            for i in default_options[question_index]:
-                itembtn = types.KeyboardButton(i)
-                markup.add(itembtn)
-            bot.send_message(chat_id, questions[question_index], reply_markup=markup)
-            bot.register_next_step_handler_by_chat_id(chat_id, save_answer, bot)
+            for i in reply_keyboard_options[lang_code][question_index]:
+                btn = types.KeyboardButton(i)
+                markup.add(btn)
 
         except KeyError:
             # Hide reply keyboard when there is no need
-            bot.send_message(
-                chat_id,
-                questions[question_index],
-                reply_markup=types.ReplyKeyboardRemove(),
-            )
-            bot.register_next_step_handler_by_chat_id(chat_id, save_answer, bot)
+            markup = types.ReplyKeyboardRemove()
+
+        bot.send_message(
+            chat_id,
+            questions[question_index],
+            reply_markup=markup,
+        )    
+        bot.register_next_step_handler_by_chat_id(chat_id, save_answer, bot, lang_code)
 
     else:
         user_id = chat_id
@@ -91,16 +90,16 @@ def ask_question(bot, message, question_index):
         bot.send_message(chat_id, plan)
 
 
-def save_answer(message, bot):
+def save_answer(message, bot, lang_code):
     user_id = message.from_user.id
     answer = message.text
     # handle cancel command
     if answer == "/cancel":
-        handle_cancel(bot, message)
+        handle_cancel(bot, message, lang_code)
     else:
         user_answers_dict[user_id].append(answer)
         next_question_index = len(user_answers_dict[user_id])
-        ask_question(bot, message, next_question_index)
+        ask_question(bot, message, next_question_index, lang_code)
 
 
 # creates the initial conversation for AI to continue
