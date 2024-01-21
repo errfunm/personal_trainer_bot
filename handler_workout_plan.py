@@ -3,40 +3,46 @@ from handler_general import handle_cancel
 from telebot import types
 
 
-QUESTIONS = {
-    "en": [
-        "Hi, \nas a personal trainer I have several questions to ask you.\nWhat is Your goal?",
-        "What is your fitness level?",
-        "How many times per week can you work out?",
-        "Do you have any equipment available?",
-        "Do you have any limitations or injuries?",
-        "Any further description?",
-    ],
-    "fa": [
-        "سلامِ، به عنوان مربی شخصی\n به این سوالات پاسخ دهید.\nهدف تان چیست؟",
-        "از لحاظ تناسب اندام در چه سطحی هستید؟",
-        "چند بار در هفته میتوانید برای تمرین کردن اختصاص دهید؟",
-        "آیا تجهیزات ورزشی دارید؟",
-        "آیا از هرگونه محدودیت یا مصدومیت برخوردار هستید؟",
-        "آیا توضیحات اضافی دارید؟",
-    ],
-}
-
-# Reply keyboard markup options
-reply_keyboard_options = {
+language_options = {
     "en": {
-        0: ["Gain muscle", "loose weight"],
-        1: ["Beginner(0-1 year)", "Intermediate(1-3 year)", "Pro(more than 3 years)"],
-        2: ["1", "2", "3", "4", "5"],
-        3: ["No", "Yes"],
-        4: ["No", "Yes"],
-    },  
+        "prompts": {
+            "create": "Hi, \nas a personal trainer I have several questions to ask you.\nIf your answer is not among"
+                      " those we have prepared for you, you can type."
+        },
+        "reply_keyboard_options": {
+            0: ["Muscle gain", "Fat loss", "Overall fitness", "Endurance", "Flexibility"],
+            1: ["Beginner", "Intermediate", "Advanced"],
+            2: ["1-2 times", "3-4 times", "5 or more times"],
+            3: ["Gym equipment", "Dumbbells", "Resistance bands", "No equipment"],
+        },
+        "questions": [
+            "What is Your goal?",
+            "What is your fitness level?",
+            "How many times per week can you work out?",
+            "Do you have any equipment available?",
+            "Do you have any limitations or injuries?(explain)",
+            "Any further description?",
+        ]
+    },
     "fa": {
-        0: ["عضله سازی", "کاهش وزن"],
-        1: ["مبتدی (0-1 سال)", "متوسط (1-3 سال)", "حرفه ای (بیش از 3 سال)"],
-        2: ["۱", "۲", "۳", "۴", "۵"],
-        3: ["بله", "خیر"],
-        4: ["بله", "خیر"]
+        "prompts": {
+            "create": "سلام،\nبه عنوان یک مربی شخصی چند سوال هست که باید از شما بپرسم.\nاگر "
+                      "جواب شما در بین آنهایی که ما برای شما آماده کرده‌ایم نبود، میتوانید تایپ کنید."
+        },
+        "reply_keyboard_options": {
+            0: ["افزایش عضله", "کاهش چربی", "تناسب اندام کلی", "استقامت", "انعطاف‌پذیری"],
+            1: ["مبتدی", "متوسط", "پیشرفته"],
+            2: ["1-2 بار", "3-4 بار", "5 یا بیشتر"],
+            3: ["تجهیزات باشگاه", "دمبل", "باندهای مقاومتی", "بدون تجهیزات"],
+        },
+        "questions": [
+            "هدفتان چیست؟",
+            "از لحاظ تناسب اندام در چه سطحی هستید؟",
+            "چند بار در هفته میتوانید برای تمرین کردن اختصاص دهید؟",
+            "آیا تجهیزات ورزشی دارید؟",
+            "آیا از هرگونه محدودیت یا مصدومیت برخوردار هستید؟(توضیح دهید)",
+            "آیا توضیحات اضافی دارید؟",
+        ]
     }
 }
 
@@ -48,19 +54,19 @@ answers_list = []
 def handle_create(bot, message, lang_code):
     user_id = message.from_user.id
     user_answers_dict[user_id] = []
+    bot.send_message(message.chat.id, language_options[lang_code]["prompts"]["create"])
     ask_question(bot, message, 0, lang_code)
 
 
 def ask_question(bot, message, question_index, lang_code):
 
-
     chat_id = message.chat.id
-    questions = QUESTIONS[lang_code]
+    questions = language_options[lang_code]["questions"]
 
     if question_index < len(questions):
         try:
             markup = types.ReplyKeyboardMarkup(row_width=1)
-            for i in reply_keyboard_options[lang_code][question_index]:
+            for i in language_options[lang_code]["reply_keyboard_options"][question_index]:
                 btn = types.KeyboardButton(i)
                 markup.add(btn)
 
@@ -105,8 +111,8 @@ def save_answer(message, bot, lang_code):
 # creates the initial conversation for AI to continue
 def prepare_initial_conversation(answers, lang):
     conversation = []
-    for i in range(len(QUESTIONS[lang])):
-        ASSIS_ROLE = {"role": "assistant", "content": QUESTIONS[lang][i]}
+    for i in range(len(language_options[lang]["questions"])):
+        ASSIS_ROLE = {"role": "assistant", "content": language_options[lang]["questions"][i]}
         USER_ROLE = {"role": "user", "content": answers[i]}
         conversation.append(ASSIS_ROLE)
         conversation.append(USER_ROLE)
